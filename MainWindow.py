@@ -47,14 +47,12 @@ class MainWindow(QMainWindow):
         status.setSizeGripEnabled(False)
         status.showMessage("Ready", 5000)
 
-        fileNewAction = QAction("&New...", self, toolTip="Create an image file", statusTip="Create an image file", icon=QIcon(":/filenew.png"), shortcut=QKeySequence.New, triggered=self.fileNew)
-        fileOpenAction = QAction("&Open", self, toolTip="Open an image file", statusTip="Open an image file", icon=QIcon(":/fileopen.png"), shortcut=QKeySequence.Open, triggered=self.fileOpen)
-        filePrintAction = QAction("&Print...", self, toolTip="Print an image", statusTip="Print an image", icon=QIcon(":/fileprint.png"), shortcut=QKeySequence.Print, triggered=self.filePrint)
+        fileOpenAction = QAction("&Open", self, toolTip="Open a cartridge", statusTip="Open a cartridge", icon=QIcon(":/fileopen.png"), shortcut=QKeySequence.Open, triggered=self.fileOpen)
+        filePrintAction = QAction("&Print...", self, toolTip="Print cartridge data", statusTip="Print cartridge data", icon=QIcon(":/fileprint.png"), shortcut=QKeySequence.Print, triggered=self.filePrint)
         fileQuitAction = QAction("&Quit", self, toolTip="Close the application", statusTip="Close the application", icon=QIcon(":/filequit.png"), shortcut=QKeySequence.Quit, triggered=self.close)
 
         self.__fileMenu = self.menuBar().addMenu("&File")
-        self.__fileMenuActions = (fileNewAction,
-                                  fileOpenAction,
+        self.__fileMenuActions = (fileOpenAction,
                                   filePrintAction,
                                   fileQuitAction)
         self.__fileMenu.aboutToShow.connect(self.updateFileMenu)
@@ -63,7 +61,6 @@ class MainWindow(QMainWindow):
 
         fileToolbar = self.addToolBar("File")
         fileToolbar.setObjectName("FileToolBar")
-        fileToolbar.addAction(fileNewAction)
         fileToolbar.addAction(fileOpenAction)
         fileToolbar.addAction(filePrintAction)
 
