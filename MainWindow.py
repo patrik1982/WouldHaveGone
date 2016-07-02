@@ -1,9 +1,11 @@
 import os
 import platform
 import sys
-from PyQt5.Qt import *
 
+from PyQt5.Qt import *
 import qrc_resources
+
+import WIGGame
 
 __version__ = "1.0.0"
 
@@ -12,15 +14,20 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(parent)
 
         self.__filename = None
+        self.__filename = "C:\\Users\\Patrik Jakobsson\\Downloads\\whereigo\\old\\GC5QFJQ_m-41-marmorbruket-ihopbundet\\script.txt"
+        d = [line.rstrip() for line in open(self.__filename, 'r')]
+        self.__game = WIGGame.WIGGame(d)
 
-        self.__imageLabel = QWebView()
-        self.__imageLabel.setMinimumSize(200, 200)
-        self.setCentralWidget(self.__imageLabel)
+        self.__webview = QWebView()
+        self.__webview.setMinimumSize(200, 200)
+        #self.__webview.setUrl(QUrl("https://www.openstreetmap.org/"))
+        self.setCentralWidget(self.__webview)
 
         treeDockWindow = QDockWidget("Contents", self)
         treeDockWindow.setObjectName("ContentsDockWidget")
         treeDockWindow.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.__treeWidget = QTreeView()
+        self.__treeWidget.setModel(self.__game)
         treeDockWindow.setWidget(self.__treeWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, treeDockWindow)
 
@@ -101,7 +108,6 @@ class MainWindow(QMainWindow):
         self.__fileMenu.addAction(self.__fileMenuActions[-1])
 
     def okToContinue(self):
-        if False:
         return True
 
     def closeEvent(self, event):
@@ -141,12 +147,6 @@ class MainWindow(QMainWindow):
 
 def main():
     app = QApplication(sys.argv)
-    app.setOrganizationName("patrik1982soft")
-    app.setOrganizationName("patrik1982soft.eu")
-    app.setApplicationName("WouldHaveGone")
-    app.setWindowIcon(QIcon(":/icon.png"))
-    form = MainWindow()
-    form.show()
     app.exec_()
 
 if __name__ == "__main__":
