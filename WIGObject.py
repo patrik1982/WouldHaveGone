@@ -1,50 +1,15 @@
-import UrwigoDecryptor
-
 from PyQt5.Qt import *
 
 class WIGObject(QAbstractTableModel):
-    def __init__(self, name=None, parent=None):
+    def __init__(self, obj, parent=None):
         QAbstractTableModel.__init__(self, parent)
-        self.properties = {}
-        self.subelements = []
-        if name:
-            self.properties['name'] = name
-            self.name = name
-
-    @staticmethod
-    def parseStruct(values):
-        result = []
-        depth = 0
-        for k in range(len(values)-1):
-            value = values[k+1]
-            if value.strip() == '{':
-                depth += 1
-                result.append(WIGObject.parseStruct(values[k+1:]))
-            elif value.strip() == '}':
-                depth -= 1
-            elif depth == 0:
-                val = value.strip()
-                if val.endswith(','):
-                    val = val[:-1]
-                result.append(val)
-        return result
+        self.name = obj.name
+        self.properties = obj.properties
 
     def set(self, property, value):
-        if type(value) == type([]): # multi-line assignment, will be a struct in this case
-            # Struct assignment
-            self.properties[property] = self.parseStruct(value)
-        elif type(value) == type(''):
-            # String
-            if value.startswith('"'):
-                self.properties[property] = eval(value)
-            else:
-                self.properties[property] = UrwigoDecryptor.decrypt(value)
-            # remove empty properties
-            if self.properties[property] == [] or self.properties[property] == {} or self.properties[property] == '' or self.properties[property] == '{}':
-                del self.properties[property]
-        else:
-            print("Unknown type: '%s'" % (value))
-        return
+        print(property, value)
+        self.properties[property] = value
+        print(self.properties)
 
     def get(self, object):
         return self.properties[object]
@@ -61,11 +26,22 @@ class WIGObject(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if (role == Qt.DisplayRole):
+            print(index)
+            print(self.properties.keys())
             row = index.row()
             col = index.column()
             key = list(self.properties.keys())[row]
-            return (key, str(self.properties[key]))[col]
-            #if col == 0:
-            #    return key
-            #elif col == 1:
-            #    return str(self.properties[key])
+            value = self.properties[key]
+            if type(value) == type([]):
+                value = '\n'.join(map(str, value))
+            else:
+                value = str(value)
+            return (key, value)[col]
+
+    def headerData(self, section, orientation, role):
+        if orientation == Qt.Horizontal and role == Qt.DisplayRole:
+            if section == 0:
+                return 'Property'
+            if section == 1:
+                return 'Value'
+        return None

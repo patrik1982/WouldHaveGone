@@ -5,6 +5,8 @@ import sys
 from PyQt5.Qt import *
 import qrc_resources
 
+import lua.parser
+
 import WIGGame
 
 __version__ = "1.0.0"
@@ -14,9 +16,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(parent)
 
         self.__filename = None
-        self.__filename = "C:\\Users\\Patrik Jakobsson\\Downloads\\whereigo\\old\\GC5QFJQ_m-41-marmorbruket-ihopbundet\\script.txt"
-        d = [line.rstrip() for line in open(self.__filename, 'r')]
-        self.__game = WIGGame.WIGGame(d)
+        self.__game = WIGGame.WIGGame()
 
         self.__webview = QWebView()
         self.__webview.setMinimumSize(200, 200)
@@ -30,6 +30,16 @@ class MainWindow(QMainWindow):
         self.__treeWidget.setModel(self.__game)
         treeDockWindow.setWidget(self.__treeWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, treeDockWindow)
+
+        infoDockWindow = QDockWidget("Information", self)
+        infoDockWindow.setObjectName("InformationDockWidget")
+        infoDockWindow.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.__infoWidget = QTreeView()
+        infoDockWindow.setWidget(self.__infoWidget)
+        self.addDockWidget(Qt.RightDockWidgetArea, infoDockWindow)
+        self.__treeWidget.clicked.connect(self.__game.updateInformation)
+
+        self.__game.selectedItemChanged.connect(self.__infoWidget.setModel)
 
         self.__printer = None
 
@@ -80,7 +90,15 @@ class MainWindow(QMainWindow):
         pass
 
     def loadFile(self, filename):
-        pass
+        p = lua.parser.Parser(filename)
+        p.parse()
+
+        for zone in p.zones:
+            self.__game.addZone(zone)
+        for media in p.media:
+            self.__game.addMedia(media)
+        for fcn in p.functions:
+            self.__game.addFunction(fcn)
 
     def addRecentFile(self, fname):
         if not fname:
@@ -126,6 +144,7 @@ class MainWindow(QMainWindow):
     def loadInitialFile(self):
         settings = QSettings()
         filename = settings.value("LastFile", type=str)
+        filename = "script.txt"
         if filename and QFile.exists(filename):
             self.loadFile(filename)
 

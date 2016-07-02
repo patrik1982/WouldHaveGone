@@ -1,0 +1,732 @@
+require("Wherigo")
+ZonePoint = Wherigo.ZonePoint
+Distance = Wherigo.Distance
+Player = Wherigo.Player
+function _AcK(str)
+  local res = ""
+  local dtable = "<]\005\aNz\003\0206g\002\029\f9Rq8Y\030\023>A~G3nl.\014/rTH\"\000dyCK`:\\1\bap+=wmW2^v\r\n*E\015\016\021\027 Z)s?@ShxV\022t\026(4DLJ\004Pb_#MFu\017\025iU{7%I!k;\v\018\031\006,\028BO0coXe\001|$-Q'f\tj5\019\024}[&"
+  for i = 1, #str do
+    local b = str:byte(i)
+    if b > 0 and b <= 127 then
+      res = res .. string.char(dtable:byte(b))
+    else
+      res = res .. string.char(b)
+    end
+  end
+  return res
+end
+require("table")
+require("math")
+math.randomseed(os.time())
+math.random()
+math.random()
+math.random()
+_Urwigo = {}
+_Urwigo.InlineRequireLoaded = {}
+_Urwigo.InlineRequireRes = {}
+function _Urwigo.InlineRequire(moduleName)
+  local res
+  if _Urwigo.InlineRequireLoaded[moduleName] == nil then
+    res = _Urwigo.InlineModuleFunc[moduleName]()
+    _Urwigo.InlineRequireLoaded[moduleName] = 1
+    _Urwigo.InlineRequireRes[moduleName] = res
+  else
+    res = _Urwigo.InlineRequireRes[moduleName]
+  end
+  return res
+end
+function _Urwigo.Round(num, idp)
+  local mult = 10 ^ (idp or 0)
+  return math.floor(num * mult + 0.5) / mult
+end
+function _Urwigo.Ceil(num, idp)
+  local mult = 10 ^ (idp or 0)
+  return math.ceil(num * mult) / mult
+end
+function _Urwigo.Floor(num, idp)
+  local mult = 10 ^ (idp or 0)
+  return math.floor(num * mult) / mult
+end
+_Urwigo.DialogQueue = {}
+function _Urwigo.RunDialogs(callback)
+  local dialogs = _Urwigo.DialogQueue
+  local lastCallback
+  _Urwigo.DialogQueue = {}
+  local msgcb = {}
+  function msgcb(action)
+    if action ~= nil then
+      if lastCallback ~= nil then
+        lastCallback(action)
+      end
+      local entry = table.remove(dialogs, 1)
+      if entry ~= nil then
+        lastCallback = entry.Callback
+        if entry.Text ~= nil then
+          Wherigo.MessageBox({
+            Text = entry.Text,
+            Media = entry.Media,
+            Buttons = entry.Buttons,
+            Callback = msgcb
+          })
+        else
+          msgcb(action)
+        end
+      elseif callback ~= nil then
+        callback()
+      end
+    end
+  end
+  msgcb(true)
+end
+function _Urwigo.MessageBox(tbl)
+  _Urwigo.RunDialogs(function()
+    Wherigo.MessageBox(tbl)
+  end)
+end
+function _Urwigo.OldDialog(tbl)
+  _Urwigo.RunDialogs(function()
+    Wherigo.Dialog(tbl)
+  end)
+end
+function _Urwigo.Dialog(buffered, tbl, callback)
+  for k, v in ipairs(tbl) do
+    table.insert(_Urwigo.DialogQueue, v)
+  end
+  if callback ~= nil then
+    table.insert(_Urwigo.DialogQueue, {Callback = callback})
+  end
+  if not buffered then
+    _Urwigo.RunDialogs(nil)
+  end
+end
+function _Urwigo.Hash(str)
+  local b = 378551
+  local a = 63689
+  local hash = 0
+  for i = 1, #str do
+    hash = hash * a + string.byte(str, i)
+    hash = math.fmod(hash, 65535)
+    a = a * b
+    a = math.fmod(a, 65535)
+  end
+  return hash
+end
+_Urwigo.DaysInMonth = {
+  31,
+  28,
+  31,
+  30,
+  31,
+  30,
+  31,
+  31,
+  30,
+  31,
+  30,
+  31
+}
+function _Urwigo_Date_IsLeapYear(year)
+  if year % 400 == 0 then
+    return true
+  elseif year % 100 == 0 then
+    return false
+  elseif year % 4 == 0 then
+    return true
+  else
+    return false
+  end
+end
+function _Urwigo.Date_DaysInMonth(year, month)
+  if month ~= 2 then
+    return _Urwigo.DaysInMonth[month]
+  elseif _Urwigo_Date_IsLeapYear(year) then
+    return 29
+  else
+    return 28
+  end
+end
+function _Urwigo.Date_DayInYear(t)
+  local res = t.day
+  for month = 1, t.month - 1 do
+    res = res + _Urwigo.Date_DaysInMonth(t.year, month)
+  end
+  return res
+end
+function _Urwigo.Date_HourInWeek(t)
+  return t.hour + (t.wday - 1) * 24
+end
+function _Urwigo.Date_HourInMonth(t)
+  return t.hour + t.day * 24
+end
+function _Urwigo.Date_HourInYear(t)
+  return t.hour + (_Urwigo.Date_DayInYear(t) - 1) * 24
+end
+function _Urwigo.Date_MinuteInDay(t)
+  return t.min + t.hour * 60
+end
+function _Urwigo.Date_MinuteInWeek(t)
+  return t.min + t.hour * 60 + (t.wday - 1) * 1440
+end
+function _Urwigo.Date_MinuteInMonth(t)
+  return t.min + t.hour * 60 + (t.day - 1) * 1440
+end
+function _Urwigo.Date_MinuteInYear(t)
+  return t.min + t.hour * 60 + (_Urwigo.Date_DayInYear(t) - 1) * 1440
+end
+function _Urwigo.Date_SecondInHour(t)
+  return t.sec + t.min * 60
+end
+function _Urwigo.Date_SecondInDay(t)
+  return t.sec + t.min * 60 + t.hour * 3600
+end
+function _Urwigo.Date_SecondInWeek(t)
+  return t.sec + t.min * 60 + t.hour * 3600 + (t.wday - 1) * 86400
+end
+function _Urwigo.Date_SecondInMonth(t)
+  return t.sec + t.min * 60 + t.hour * 3600 + (t.day - 1) * 86400
+end
+function _Urwigo.Date_SecondInYear(t)
+  return t.sec + t.min * 60 + t.hour * 3600 + (_Urwigo.Date_DayInYear(t) - 1) * 86400
+end
+_Urwigo.InlineModuleFunc = {}
+cartMarmorbruketihopbundet = Wherigo.ZCartridge()
+zmediaaa99177ef47b4e75b4258bffc8763f52 = Wherigo.ZMedia(cartMarmorbruketihopbundet)
+zmediaaa99177ef47b4e75b4258bffc8763f52.Id = "760f7781-7155-40d5-9e63-5fca1312a873"
+zmediaaa99177ef47b4e75b4258bffc8763f52.Name = _AcK("--\014\014+^^pwM^SMp^zSM4z\017Swwm\017^\t\025wz4")
+zmediaaa99177ef47b4e75b4258bffc8763f52.Description = _AcK("2p$[-")
+zmediaaa99177ef47b4e75b4258bffc8763f52.AltText = ""
+zmediaaa99177ef47b4e75b4258bffc8763f52.Resources = {
+  {
+    Type = "jpg",
+    Filename = "aa99177e-f47b-4e75-b425-8bffc8763f52.jpg",
+    Directives = {}
+  }
+}
+zmedia2f4b544e34934c56b960d09a4dfc9978 = Wherigo.ZMedia(cartMarmorbruketihopbundet)
+zmedia2f4b544e34934c56b960d09a4dfc9978.Id = "b5601384-173c-4790-a64c-7d53e0667048"
+zmedia2f4b544e34934c56b960d09a4dfc9978.Name = _AcK("4wMSzMMp\025M\014\025Mmz\tS\014\tl$l\014-M$wm\014\014^\017")
+zmedia2f4b544e34934c56b960d09a4dfc9978.Description = _AcK("2p$[-")
+zmedia2f4b544e34934c56b960d09a4dfc9978.AltText = ""
+zmedia2f4b544e34934c56b960d09a4dfc9978.Resources = {
+  {
+    Type = "jpg",
+    Filename = "2f4b544e-3493-4c56-b960-d09a4dfc9978.jpg",
+    Directives = {}
+  }
+}
+zmedia8ad2002ad1ec4f4db98255c3510caac2 = Wherigo.ZMedia(cartMarmorbruketihopbundet)
+zmedia8ad2002ad1ec4f4db98255c3510caac2.Id = "be75702d-5a45-4c17-88a7-4248f77918a2"
+zmedia8ad2002ad1ec4f4db98255c3510caac2.Name = _AcK("\017-$4ll4-$+pmMwM$S\014\0174zzm\025z+lm--m4")
+zmedia8ad2002ad1ec4f4db98255c3510caac2.Description = _AcK("2p$[-")
+zmedia8ad2002ad1ec4f4db98255c3510caac2.AltText = ""
+zmedia8ad2002ad1ec4f4db98255c3510caac2.Resources = {
+  {
+    Type = "jpg",
+    Filename = "8ad2002a-d1ec-4f4d-b982-55c3510caac2.jpg",
+    Directives = {}
+  }
+}
+zmedia5b215cbc15d6414197982622ae4a6c9e = Wherigo.ZMedia(cartMarmorbruketihopbundet)
+zmedia5b215cbc15d6414197982622ae4a6c9e.Id = "379d61bf-388e-4017-8c8f-2e1de4f0d370"
+zmedia5b215cbc15d6414197982622ae4a6c9e.Name = _AcK("zS4+zmSm+z$\tM+M+\014^\014\0174\t44-pM-\tm\014p")
+zmedia5b215cbc15d6414197982622ae4a6c9e.Description = _AcK("2p$[-")
+zmedia5b215cbc15d6414197982622ae4a6c9e.AltText = ""
+zmedia5b215cbc15d6414197982622ae4a6c9e.Resources = {
+  {
+    Type = "jpg",
+    Filename = "5b215cbc-15d6-4141-9798-2622ae4a6c9e.jpg",
+    Directives = {}
+  }
+}
+zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab = Wherigo.ZMedia(cartMarmorbruketihopbundet)
+zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab.Id = "92ae6c15-6cbe-4a89-8a8e-aa7a5525d4a6"
+zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab.Name = _AcK("4w\017$-pl\tS^\t-MmSp\017\t-M$S$^$\017\tm-\014-S")
+zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab.Description = _AcK("2p$[-")
+zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab.AltText = ""
+zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab.Resources = {
+  {
+    Type = "jpg",
+    Filename = "2f8dae06-b76a-4cbe-86a4-dbd7d86ca9ab.jpg",
+    Directives = {}
+  }
+}
+cartMarmorbruketihopbundet.Id = "6c0d131d-dcf9-4acb-917d-84c1e535bcce"
+cartMarmorbruketihopbundet.Name = "Marmorbruket - ihopbundet"
+cartMarmorbruketihopbundet.Description = "En liten Wherigo att binda ihop det hela med."
+cartMarmorbruketihopbundet.Visible = true
+cartMarmorbruketihopbundet.Activity = "Geocache"
+cartMarmorbruketihopbundet.StartingLocationDescription = ""
+cartMarmorbruketihopbundet.StartingLocation = ZonePoint(58.662517, 16.41725, 0)
+cartMarmorbruketihopbundet.Version = "1"
+cartMarmorbruketihopbundet.Company = "Br\195\165bobygdens Burkalag"
+cartMarmorbruketihopbundet.Author = "Fj\195\164derl\195\182s Tv\195\165foting"
+cartMarmorbruketihopbundet.BuilderVersion = "URWIGO 1.21.5528.18461"
+cartMarmorbruketihopbundet.CreateDate = "04/09/2015 20:34:16"
+cartMarmorbruketihopbundet.PublishDate = "1/1/0001 12:00:00 AM"
+cartMarmorbruketihopbundet.UpdateDate = "04/12/2015 15:19:29"
+cartMarmorbruketihopbundet.LastPlayedDate = "1/1/0001 12:00:00 AM"
+cartMarmorbruketihopbundet.TargetDevice = "PocketPC"
+cartMarmorbruketihopbundet.TargetDeviceVersion = "0"
+cartMarmorbruketihopbundet.StateId = "1"
+cartMarmorbruketihopbundet.CountryId = "2"
+cartMarmorbruketihopbundet.Complete = false
+cartMarmorbruketihopbundet.UseLogging = true
+cartMarmorbruketihopbundet.Media = zmediaaa99177ef47b4e75b4258bffc8763f52
+zoneFabriken = Wherigo.Zone(cartMarmorbruketihopbundet)
+zoneFabriken.Id = "71d9beac-e94e-43c0-8458-82c7ecbb4507"
+zoneFabriken.Name = _AcK("W-S\031[bp\026")
+zoneFabriken.Description = _AcK("W-S\031[bp\026")
+zoneFabriken.Visible = true
+zoneFabriken.Media = zmedia2f4b544e34934c56b960d09a4dfc9978
+zoneFabriken.Commands = {}
+zoneFabriken.DistanceRange = Distance(-1, "feet")
+zoneFabriken.ShowObjects = "OnEnter"
+zoneFabriken.ProximityRange = Distance(8, "meters")
+zoneFabriken.AllowSetPositionTo = false
+zoneFabriken.Active = true
+zoneFabriken.Points = {
+  ZonePoint(58.6625516666667, 16.417285, 0),
+  ZonePoint(58.6625516666667, 16.417215, 0),
+  ZonePoint(58.6624816666667, 16.417215, 0),
+  ZonePoint(58.6624816666667, 16.417285, 0)
+}
+zoneFabriken.OriginalPoint = ZonePoint(58.6625166666667, 16.41725, 0)
+zoneFabriken.DistanceRangeUOM = "Feet"
+zoneFabriken.ProximityRangeUOM = "Meters"
+zoneFabriken.OutOfRangeName = ""
+zoneFabriken.InRangeName = ""
+zoneTrkigvg = Wherigo.Zone(cartMarmorbruketihopbundet)
+zoneTrkigvg.Id = "64058832-cd74-449b-adc1-b6899eb11020"
+zoneTrkigvg.Name = _AcK(" \031b[\n?6\n")
+zoneTrkigvg.Description = _AcK(" \031\195\165b[\n?6\195\164\nC")
+zoneTrkigvg.Visible = true
+zoneTrkigvg.Media = zmediaaa99177ef47b4e75b4258bffc8763f52
+zoneTrkigvg.Commands = {}
+zoneTrkigvg.DistanceRange = Distance(-1, "feet")
+zoneTrkigvg.ShowObjects = "OnEnter"
+zoneTrkigvg.ProximityRange = Distance(8, "meters")
+zoneTrkigvg.AllowSetPositionTo = false
+zoneTrkigvg.Active = false
+zoneTrkigvg.Points = {
+  ZonePoint(58.6629932970264, 16.4146570310847, 0),
+  ZonePoint(58.6629932970264, 16.4145870310847, 0),
+  ZonePoint(58.6629232970264, 16.4145870310847, 0),
+  ZonePoint(58.6629232970264, 16.4146570310847, 0)
+}
+zoneTrkigvg.OriginalPoint = ZonePoint(58.6629582970264, 16.4146220310847, 0)
+zoneTrkigvg.DistanceRangeUOM = "Feet"
+zoneTrkigvg.ProximityRangeUOM = "Meters"
+zoneTrkigvg.OutOfRangeName = ""
+zoneTrkigvg.InRangeName = ""
+zoneMarmorbruksskolan = Wherigo.Zone(cartMarmorbruketihopbundet)
+zoneMarmorbruksskolan.Id = "4d4bb4ab-6f43-4535-a64e-f5525225fcee"
+zoneMarmorbruksskolan.Name = _AcK("V-\0312n\031S\031XbBBbn\027-\026")
+zoneMarmorbruksskolan.Description = _AcK("V-\0312n\031S\031XbBBbn\027-\026")
+zoneMarmorbruksskolan.Visible = true
+zoneMarmorbruksskolan.Media = zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab
+zoneMarmorbruksskolan.Commands = {}
+zoneMarmorbruksskolan.DistanceRange = Distance(-1, "feet")
+zoneMarmorbruksskolan.ShowObjects = "OnEnter"
+zoneMarmorbruksskolan.ProximityRange = Distance(8, "meters")
+zoneMarmorbruksskolan.AllowSetPositionTo = false
+zoneMarmorbruksskolan.Active = false
+zoneMarmorbruksskolan.Points = {
+  ZonePoint(58.662785, 16.411935, 0),
+  ZonePoint(58.662785, 16.411865, 0),
+  ZonePoint(58.662715, 16.411865, 0),
+  ZonePoint(58.662715, 16.411935, 0)
+}
+zoneMarmorbruksskolan.OriginalPoint = ZonePoint(58.66275, 16.4119, 0)
+zoneMarmorbruksskolan.DistanceRangeUOM = "Feet"
+zoneMarmorbruksskolan.ProximityRangeUOM = "Meters"
+zoneMarmorbruksskolan.OutOfRangeName = ""
+zoneMarmorbruksskolan.InRangeName = ""
+zoneMarmorbruksbacken = Wherigo.Zone(cartMarmorbruketihopbundet)
+zoneMarmorbruksbacken.Id = "0ef17798-3799-453d-a722-5b91798f7ca3"
+zoneMarmorbruksbacken.Name = _AcK("V-\0312n\031S\031XbBS-mbp\026")
+zoneMarmorbruksbacken.Description = _AcK("V-\0312n\031S\031XbBS-mbp\026")
+zoneMarmorbruksbacken.Visible = true
+zoneMarmorbruksbacken.Media = zmedia5b215cbc15d6414197982622ae4a6c9e
+zoneMarmorbruksbacken.Commands = {}
+zoneMarmorbruksbacken.DistanceRange = Distance(-1, "feet")
+zoneMarmorbruksbacken.ShowObjects = "OnEnter"
+zoneMarmorbruksbacken.ProximityRange = Distance(8, "meters")
+zoneMarmorbruksbacken.AllowSetPositionTo = false
+zoneMarmorbruksbacken.Active = false
+zoneMarmorbruksbacken.Points = {
+  ZonePoint(58.6636183333333, 16.408385, 0),
+  ZonePoint(58.6636183333333, 16.408315, 0),
+  ZonePoint(58.6635483333333, 16.408315, 0),
+  ZonePoint(58.6635483333333, 16.408385, 0)
+}
+zoneMarmorbruksbacken.OriginalPoint = ZonePoint(58.6635833333333, 16.40835, 0)
+zoneMarmorbruksbacken.DistanceRangeUOM = "Feet"
+zoneMarmorbruksbacken.ProximityRangeUOM = "Meters"
+zoneMarmorbruksbacken.OutOfRangeName = ""
+zoneMarmorbruksbacken.InRangeName = ""
+zoneGrindstolparna = Wherigo.Zone(cartMarmorbruketihopbundet)
+zoneGrindstolparna.Id = "8950f54a-82cc-4fcd-995c-f11a793b4ef9"
+zoneGrindstolparna.Name = _AcK("\024\031[\026$BJn\027.-\031\026-")
+zoneGrindstolparna.Description = _AcK("\024\031[\026$BJn\027.-\031\026-")
+zoneGrindstolparna.Visible = true
+zoneGrindstolparna.Media = zmedia2f4b544e34934c56b960d09a4dfc9978
+zoneGrindstolparna.Commands = {}
+zoneGrindstolparna.DistanceRange = Distance(-1, "feet")
+zoneGrindstolparna.ShowObjects = "OnEnter"
+zoneGrindstolparna.ProximityRange = Distance(8, "meters")
+zoneGrindstolparna.AllowSetPositionTo = false
+zoneGrindstolparna.Active = false
+zoneGrindstolparna.Points = {
+  ZonePoint(58.663885, 16.407385, 0),
+  ZonePoint(58.663885, 16.407315, 0),
+  ZonePoint(58.663815, 16.407315, 0),
+  ZonePoint(58.663815, 16.407385, 0)
+}
+zoneGrindstolparna.OriginalPoint = ZonePoint(58.66385, 16.40735, 0)
+zoneGrindstolparna.DistanceRangeUOM = "Feet"
+zoneGrindstolparna.ProximityRangeUOM = "Meters"
+zoneGrindstolparna.OutOfRangeName = ""
+zoneGrindstolparna.InRangeName = ""
+zoneOupps = Wherigo.Zone(cartMarmorbruketihopbundet)
+zoneOupps.Id = "539af3eb-0530-47ed-bfd2-195d86c4aedc"
+zoneOupps.Name = _AcK("kX..Ba")
+zoneOupps.Description = ""
+zoneOupps.Visible = true
+zoneOupps.Media = zmediaaa99177ef47b4e75b4258bffc8763f52
+zoneOupps.Commands = {}
+zoneOupps.DistanceRange = Distance(-1, "feet")
+zoneOupps.ShowObjects = "OnEnter"
+zoneOupps.ProximityRange = Distance(8, "meters")
+zoneOupps.AllowSetPositionTo = false
+zoneOupps.Active = false
+zoneOupps.Points = {
+  ZonePoint(58.6640457971191, 16.406446920166, 0),
+  ZonePoint(58.6640457971191, 16.406426920166, 0),
+  ZonePoint(58.6640257971191, 16.406426920166, 0),
+  ZonePoint(58.6640257971191, 16.406446920166, 0)
+}
+zoneOupps.OriginalPoint = ZonePoint(58.6640357971191, 16.406436920166, 0)
+zoneOupps.DistanceRangeUOM = "Feet"
+zoneOupps.ProximityRangeUOM = "Meters"
+zoneOupps.OutOfRangeName = ""
+zoneOupps.InRangeName = ""
+zitemUnlockCode = Wherigo.ZItem(cartMarmorbruketihopbundet)
+zitemUnlockCode.Id = "f25f811b-d4ae-472a-beb8-f9ff74006415"
+zitemUnlockCode.Name = _AcK("\\\026\027nmb?&n$p")
+zitemUnlockCode.Description = _AcK("\018nX\031?mn2.\027pJ[n\026?mn$p?[B)?")
+zitemUnlockCode.Visible = true
+zitemUnlockCode.Media = zmediaaa99177ef47b4e75b4258bffc8763f52
+zitemUnlockCode.Commands = {}
+zitemUnlockCode.ObjectLocation = Wherigo.INVALID_ZONEPOINT
+zitemUnlockCode.Locked = false
+zitemUnlockCode.Opened = false
+_wFU = Wherigo.ZItem(cartMarmorbruketihopbundet)
+_wFU.Id = "87fef0c5-e8e3-4353-b1a1-068e9223f257"
+_wFU.Name = _AcK("E\027XJbnn\031$[\026-Jp\031")
+_wFU.Description = ""
+_wFU.Visible = true
+_wFU.Media = zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab
+_wFU.Commands = {}
+_wFU.ObjectLocation = Wherigo.INVALID_ZONEPOINT
+_wFU.Locked = false
+_wFU.Opened = false
+Answer = ""
+EnteredFinalZone = nil
+_syTwI = _AcK("\006n\026pW-S\031[bp\026")
+_WMrv = _AcK("$X22%")
+_wVjyQ = _AcK("\006[Jp2\\\026\027nmb&n$p")
+_dKF_N = _AcK("$X22%")
+_F97o = _AcK("\006[\026.XJ`\026.XJl")
+_gVh = _AcK("$X22%")
+cartMarmorbruketihopbundet.ZVariables = {
+  Answer = "",
+  EnteredFinalZone = nil,
+  _syTwI = _AcK("\006n\026pW-S\031[bp\026"),
+  _WMrv = _AcK("$X22%"),
+  _wVjyQ = _AcK("\006[Jp2\\\026\027nmb&n$p"),
+  _dKF_N = _AcK("$X22%"),
+  _F97o = _AcK("\006[\026.XJ`\026.XJl"),
+  _gVh = _AcK("$X22%")
+}
+zinputInput0 = Wherigo.ZInput(cartMarmorbruketihopbundet)
+zinputInput0.Id = "c16cee9c-3645-4b51-b449-137bd92e7041"
+zinputInput0.Name = _AcK("`\026.XJl")
+zinputInput0.Description = ""
+zinputInput0.Visible = true
+zinputInput0.Media = zmedia8ad2002ad1ec4f4db98255c3510caac2
+zinputInput0.InputType = "Text"
+zinputInput0.Text = _AcK("!\195\164\031?SpF\195\1826p\031?6[?\026X?p\026?BJ-\031Jbn$\028?Np\026?\195\164\031?2pBJ?J[\027\027?w\195\182\031?-JJ?2-\026?[\026Jp?Bb-?bX\026\026-?\n\195\165?$pJJ-h?[\026\026-\026?$p\026?B\027\195\164..B?.\195\165?\npnm-mF[\026\n\028mn2\028")
+zinputInput1 = Wherigo.ZInput(cartMarmorbruketihopbundet)
+zinputInput1.Id = "574f4572-4578-4a05-896e-128ae9f2f9f7"
+zinputInput1.Name = _AcK("`\026.XJ+")
+zinputInput1.Description = ""
+zinputInput1.Visible = true
+zinputInput1.Media = zmedia5b215cbc15d6414197982622ae4a6c9e
+zinputInput1.InputType = "Text"
+zinputInput1.Text = _AcK("Ep\031?$X?6-$?$pJ?BJ\195\165\031?w\195\182\031?\195\165\031J-\027?.\195\165?BJn\027.p\026C")
+function cartMarmorbruketihopbundet:OnStart()
+  if _G[_AcK(":\0266")][_AcK("R\027-Jwn\0312")] == _AcK("3[\026\0254") or _G[_AcK(":\0266")][_AcK("Np6[mp`N")] == _AcK("NpBbJn.") then
+    for k, v in pairs(_G[_AcK("m-\031JV-\0312n\031S\031XbpJ[Fn.SX\026$pJ")][_AcK("\022\027\027@kSypmJB")]) do
+      v[_AcK("H[B[S\027p")] = false
+      v[_AcK("\022mJ[6p")] = false
+    end
+    _G[_AcK("3Fp\031[\nn")][_AcK("&n22-\026$")](_AcK("E-6p&\027nBp"))
+    return
+  end
+end
+function cartMarmorbruketihopbundet:OnRestore()
+end
+function zoneFabriken:OnEnter()
+  _syTwI = _AcK("\006n\026pW-S\031[bp\026")
+  zoneFabriken.Active = false
+  _Urwigo.MessageBox({
+    Text = _AcK("NpJJ-?\195\164\031?b-\026Bbph?[?w\195\182\031BJ-?\195\165B%\026p\026?$p\026?J\031[BJ-\031p?$p\027p\026?-6?V-\0312n\031BJ[\np\026\028?kmFh?$pJ?2\195\165?B\195\165?6-\031-\028?`\026\np\026?\031n\027[\n?\026-JX\031?-JJ?\n\195\165?.\195\165\028?Vp\026h?$pJ?b-\026Bbp?b-\026?w[\026\026-B?\026\195\165\nnJ?6[$?B[$-\026?-6?6\195\164\np\026?Bn2?\195\164\031?[\026J\031pBB-\026J\028"),
+    Media = zmedia2f4b544e34934c56b960d09a4dfc9978,
+    Callback = function(action)
+      if action ~= nil then
+        _Urwigo.RunDialogs(function()
+          Wherigo.GetInput(zinputInput0)
+        end)
+      end
+    end
+  })
+end
+function zoneTrkigvg:OnEnter()
+  _syTwI = _AcK("\006n\026p \031b[\n6\n")
+  zoneTrkigvg.Active = false
+  _Urwigo.MessageBox({
+    Text = _AcK("V-\026?b-\026Bbp?bX\026$p?J\195\164\026b-?B[\n?-JJ?$\031-?\027p$p\026h?V-\0312n\031BJ[\np\026?p\026?-\026\026-\026?6\195\164\nh?2p\026?$pJJ-?\195\164\031?B-2J[$[\nJ?$p\026?6\195\164\n?Bn2?2-\0312n\031\026?w\195\164\031$-$pBh?$p\027B?Bn2?w\195\164\031$[\n?.\031n$XbJh?2p\026?nmbB\195\165?w\031\195\165\026?$p?S\031nJJ?Bn2?[\026Jp?\027[\n\np\031?2[JJ?[?V-\0312n\031S\031XbpJ\028?NpJ?w-\026\026B?6\195\164\027h?Sp\031np\026$p?.\195\165?FX\031?2-\026?\031\195\164b\026-\031?m-\028?\tz?n\027[b-?S\031nJJB.\027-JBp\031\028?L$pJ?\195\164\031?6\195\164\031\031p?p\026?\024nJF-2?&[J%A"),
+    Media = zmedia2f4b544e34934c56b960d09a4dfc9978,
+    Callback = function(action)
+      if action ~= nil then
+        zoneMarmorbruksskolan.Active = true
+        cartMarmorbruketihopbundet:RequestSync()
+      end
+    end
+  })
+end
+function zoneMarmorbruksskolan:OnEnter()
+  _syTwI = _AcK("\006n\026pV-\0312n\031S\031XbBBbn\027-\026")
+  zoneMarmorbruksskolan.Active = false
+  _Urwigo.MessageBox({
+    Text = _AcK("!\195\164\031?\027\195\165\n?V-\0312n\031S\031XbpJB?Bbn\027-\028?O\195\164\031-\031p\026? n\031BJp\026?:\026\nBJ\031\195\1822?\027\195\165\n?S-bn2?2%mbpJ?-6?$p?XJ\n\031\195\1646\026[\026\n-\031?Bn2?\nyn\031JB?[?n2\031\195\165$pJ\028?W\031-2w\195\182\031-\027\027J?\n\195\164\027\027p\031?$pJJ-?BJp\026\195\165\027$p\031\026\028?\001j\015\021:\026\nBJ\031\195\1822?Bb\031p6?\195\1646p\026?p\026?$p\027?Bb\031[wJp\031?n2?$p\026?\027nb-\027-?F[BJn\031[-\026\028?!-\026?F-$p?p\026?$p\027?B-2-\031SpJp?2p$?\005n\031\031b\195\182.[\026\nB?\027nb-\027-?F[BJn\031[bp\031?\022\031JFX\031?\005n\031$\195\169\026?Bn2?wn\031Bb-J?p\026?$p\027?[?S\027\028-\028?j\031\195\1656-\027\027-?B\027-\n\028"),
+    Media = zmedia5b215cbc15d6414197982622ae4a6c9e,
+    Callback = function(action)
+      if action ~= nil then
+        _Urwigo.MessageBox({
+          Text = _AcK("k2?$X?6[\027\027?B\195\165?b-\026?$Xh?pwJp\031?Bbn\027-\026B?2-\031b?\n\195\165?[\026?[?Bbn\np\026?nmF?w\195\182\027y-?BJ[\np\026?\026p\031?J[\027\027?\026\195\164BJ-?\006n\026\028?NpJ?\195\164\031?6-\031p?B[\n?\026\195\164\0312-\031p?p\027\027p\031?B\026-SS-\031ph?2p\026?2-\026?B\027[..p\031?p\026?$p\027?\027-\026$B6\195\164\n\028?Rp\031Bn\026\027[\np\026?B\195\165?J%mbp\031?y-\n?-JJ?\027p$p\026?BbX\027\027p?\n\195\165?$p\026?6\195\164\np\026?[BJ\195\164\027\027pJ\028"),
+          Media = zmedia2f4b544e34934c56b960d09a4dfc9978,
+          Callback = function(action)
+            if action ~= nil then
+              zoneMarmorbruksbacken.Active = true
+              cartMarmorbruketihopbundet:RequestSync()
+            end
+          end
+        })
+      end
+    end
+  })
+end
+function zoneMarmorbruksbacken:OnEnter()
+  _syTwI = _AcK("\006n\026pV-\0312n\031S\031XbBS-mbp\026")
+  zoneMarmorbruksbacken.Active = false
+  _Urwigo.MessageBox({
+    Text = _AcK("!\195\164\031?bn22p\031?2-\026?XJh?n2?2-\026?6\195\164\027yp\031?-JJ?\n\195\165?BJ[\np\026?\np\026n2?Bbn\np\026?.\195\165?NX6Sp\031\npJ\028?\001j\015\021Np\026\026-?S-mbp?F-\031?p\026?B.pm[p\027\027?F[BJn\031[-\028?\005\195\164\031?2-\0312n\031?w\031-bJ-$pB?J[\027\027?'\031nbpbB?BJ-J[n\026?B\195\165?6-\031?$pJ?2p$?F\195\164BJ?nmF?6-\n\026\028?LV[\026?w-\031w-\031?6-\031?bXBbA\001j\015\021\005\195\164\031?2-\026?b\195\182\031$p?\026p$w\195\182\031?S-mbp\026h?w\031\195\165\026?W-S\031[bp\026?B\195\165?S\027p6?$pJ?\031py\195\164\027-?J%\026\n$p\031\028?V-\026?w[mb?$\195\165?F-?B\195\164\031Bb[\027J?\027X\n\026-?F\195\164BJ-\031?Bn2?\n[mb?\195\165J?-\026$\031-?F\195\165\027\027pJh?nmF?F\195\182\027\027?[\np\026\028?\024yn\031$p?2-\026?[\026Jp?$pJ?B\195\165?BbX\027\027p?Fp\027-?pb[.-\npJ?Bbp\026-?\026p$w\195\182\031?S-mbp\026\028"),
+    Media = zmedia8ad2002ad1ec4f4db98255c3510caac2,
+    Callback = function(action)
+      if action ~= nil then
+        zoneGrindstolparna.Active = true
+        cartMarmorbruketihopbundet:RequestSync()
+      end
+    end
+  })
+end
+function zoneGrindstolparna:OnEnter()
+  _syTwI = _AcK("\006n\026p\024\031[\026$BJn\027.-\031\026-")
+  zoneGrindstolparna.Active = false
+  _Urwigo.MessageBox({
+    Text = _AcK("H[$?[\026w-\031Jp\026?.\195\165?NX6Sp\031\nB6\195\164\np\026?+h?$\195\164\031?$X?\026X?BJ\195\165\031?B\195\165?w[\026\026B?J6\195\165?\n\031[\026$BJn\027.-\031\028?NpBB-?J6\195\165?\195\164\031?w\027%JJ-$p?nmF?BJn$?p\026?\027[Jp\026?S[J?X..?[?V-\0312n\031S\031XbBS-mbp\026\028?Np?2-\031bp\031-$p?[\026w-\031Jp\026?J[\027\027?By\195\164\0276-?S\031XbpJ\028"),
+    Media = zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab,
+    Callback = function(action)
+      if action ~= nil then
+        _Urwigo.RunDialogs(function()
+          Wherigo.GetInput(zinputInput1)
+        end)
+      end
+    end
+  })
+end
+function zoneOupps:OnEnter()
+  _syTwI = _AcK("\006n\026pkX..B")
+  if EnteredFinalZone ~= true then
+    EnteredFinalZone = true
+    zoneOupps.Active = false
+    _Urwigo.MessageBox({
+      Text = _AcK("\005pyh?\026X?F-\031?$X?\n\195\165JJ?w\195\182\031?\027\195\165\026\nJ\028?N-\nB?-JJ?\027pJ-?X..?SX\031bp\026\028\001j\015\021EX?F-\031?\026X?B\027XJbnn\031$[\026-Jp\031\026-?[?$[\026-?`Jp2Bh?B-2J?-bJ[6p\031[\026\nBbn$?J[\027\027?1Fp\031[\nn\028mn2h?[w-\027\027?-JJ?$X?B-2\027-\031?.\195\165?B\195\165$-\026-\028"),
+      Media = zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab,
+      Callback = function(action)
+        if action ~= nil then
+          _Urwigo.MessageBox({
+            Text = (_AcK(" Fp?m-\031J\031[$\np?[B?mn2.\027pJp\028?\127\026SB.c\018nX\031?mn2.\027pJ[n\026?mn$p?[B?") .. string.sub(Player.CompletionCode, 1, 15)) .. _AcK("\028?\127\026SB.cV-bp?BX\031p?Jn?1\031[Jp?JF[B?$n1\026\028")
+          })
+          cartMarmorbruketihopbundet.Complete = true
+          zitemUnlockCode.Description = zitemUnlockCode.Description .. string.sub(Player.CompletionCode, 1, 15)
+          _wFU:MoveTo(Player)
+          zitemUnlockCode:MoveTo(Player)
+        end
+      end
+    })
+    zoneOupps.Active = true
+  end
+end
+function zinputInput0:OnGetInput(input)
+  if input == nil then
+    input = ""
+  end
+  if _Urwigo.Hash(string.lower(input)) == 7854 then
+    _Urwigo.MessageBox({
+      Text = _AcK("j\031-h?\026X?\n\195\165\031?6[?6[$-\031p\028"),
+      Media = zmedia5b215cbc15d6414197982622ae4a6c9e,
+      Callback = function(action)
+        if action ~= nil then
+          _Urwigo.MessageBox({
+            Text = _AcK("H[?BJ\195\165\031?\026X?6[$?V-\0312n\031S\031XbpJB?w-S\031[b\028?!\195\164\031?Sp-\031SpJ-$pB?2-\0312n\031\026?p\026?\n\195\165\026\n?[?J[$p\026\028?`$-\n?\195\164\031?$pJ?-\026\026-\026?6p\031bB-2FpJ?F\195\164\031\028"),
+            Media = zmedia5b215cbc15d6414197982622ae4a6c9e,
+            Callback = function(action)
+              if action ~= nil then
+                zoneTrkigvg.Active = true
+                cartMarmorbruketihopbundet:RequestSync()
+              end
+            end
+          })
+        end
+      end
+    })
+  else
+    _Urwigo.MessageBox({
+      Text = _AcK("Wp\027?bn$\028"),
+      Media = zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab,
+      Callback = function(action)
+        if action ~= nil then
+          _Urwigo.RunDialogs(function()
+            Wherigo.GetInput(zinputInput0)
+          end)
+        end
+      end
+    })
+  end
+end
+function zinputInput1:OnGetInput(input)
+  if input == nil then
+    input = ""
+  end
+  if _Urwigo.Hash(string.lower(input)) == 27037 then
+    _Urwigo.MessageBox({
+      Text = _AcK("NX?Bp\031?S\031-\028"),
+      Media = zmedia2f8dae06b76a4cbe86a4dbd7d86ca9ab,
+      Callback = function(action)
+        if action ~= nil then
+          zoneOupps.Active = true
+          cartMarmorbruketihopbundet:RequestSync()
+        end
+      end
+    })
+  else
+    _Urwigo.MessageBox({
+      Text = _AcK(" [JJ-?\027[Jp?\026n\n\n\031-\026\026-\031p\028"),
+      Media = zmedia8ad2002ad1ec4f4db98255c3510caac2,
+      Callback = function(action)
+        if action ~= nil then
+          _Urwigo.RunDialogs(function()
+            Wherigo.GetInput(zinputInput1)
+          end)
+        end
+      end
+    })
+  end
+end
+function _wFU:OnClick()
+  _Urwigo.MessageBox({
+    Text = _AcK("SX\031bp\026?w[\026\026p\031?$X?.\195\165)\001j\015\021\005?z\017\194\176?\025\014\028\017zl?:?l+\t\194\176?4M\028z\017\025")
+  })
+end
+cartMarmorbruketihopbundet.MsgBoxCBFuncs = {}
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB1(action)
+  if action ~= nil then
+    Wherigo.GetInput(zinputInput0)
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB2(action)
+  if action ~= nil then
+    Wherigo.GetInput(zinputInput0)
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB3(action)
+  if action ~= nil then
+    Wherigo.MessageBox({
+      Text = "Vi st\195\165r nu vid Marmorbrukets fabrik. H\195\164r bearbetades marmorn en g\195\165ng i tiden. Idag \195\164r det annan verksamhet h\195\164r.",
+      Media = zmedia5b215cbc15d6414197982622ae4a6c9e,
+      Callback = cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB4
+    })
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB4(action)
+  if action ~= nil then
+    zoneTrkigvg.Active = true
+    cartMarmorbruketihopbundet:RequestSync()
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB5(action)
+  if action ~= nil then
+    zoneMarmorbruksskolan.Active = true
+    cartMarmorbruketihopbundet:RequestSync()
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB6(action)
+  if action ~= nil then
+    Wherigo.MessageBox({
+      Text = "Om du vill s\195\165 kan du, efter skolans mark g\195\165 in i skogen och f\195\182lja stigen ner till n\195\164sta zon. Det \195\164r vare sig n\195\164rmare eller snabbare, men man slipper en del landsv\195\164g. Personligen s\195\165 tycker jag att leden skulle g\195\165 den v\195\164gen ist\195\164llet.",
+      Media = zmedia2f4b544e34934c56b960d09a4dfc9978,
+      Callback = cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB7
+    })
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB7(action)
+  if action ~= nil then
+    zoneMarmorbruksbacken.Active = true
+    cartMarmorbruketihopbundet:RequestSync()
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB8(action)
+  if action ~= nil then
+    zoneGrindstolparna.Active = true
+    cartMarmorbruketihopbundet:RequestSync()
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB9(action)
+  if action ~= nil then
+    Wherigo.GetInput(zinputInput1)
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB10(action)
+  if action ~= nil then
+    Wherigo.GetInput(zinputInput1)
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB11(action)
+  if action ~= nil then
+    zoneOupps.Active = true
+    cartMarmorbruketihopbundet:RequestSync()
+  end
+end
+function cartMarmorbruketihopbundet.MsgBoxCBFuncs.MsgBoxCB12(action)
+  if action ~= nil then
+    Wherigo.MessageBox({
+      Text = "The cartridge is complete. &nbsp;Your completion code is " .. string.sub(Player.CompletionCode, 1, 15) .. ". &nbsp;Make sure to write this down."
+    })
+    cartMarmorbruketihopbundet.Complete = true
+    zitemUnlockCode.Description = zitemUnlockCode.Description .. string.sub(Player.CompletionCode, 1, 15)
+    zitemUnlockCode:MoveTo(Player)
+  end
+end
+return cartMarmorbruketihopbundet
