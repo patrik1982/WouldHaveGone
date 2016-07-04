@@ -86,13 +86,12 @@ class Parser(object):
                         assigmentDone = True
                 if assigmentDone:
                     o = object
-                    matchProperty = reProperty.match(object)
+                    matchProperty = reProperty.match(o)
                     if matchProperty:
                         (object, property) = matchProperty.groups()
                         if object in nametable.keys():
                             nametable[object].set(property, value)
                         else:
-                            object = o
                             obj = LuaObject(object)
                             self.objects.append(obj)
                             nametable[object] = obj

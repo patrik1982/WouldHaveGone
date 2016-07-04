@@ -18,9 +18,12 @@ class MainWindow(QMainWindow):
         self.__filename = None
         self.__game = WIGGame.WIGGame()
 
+        self.__html = None
+
         self.__webview = QWebView()
         self.__webview.setMinimumSize(200, 200)
         #self.__webview.setUrl(QUrl("https://www.openstreetmap.org/"))
+        QWebSettings.globalSettings().setAttribute(QWebSettings.DeveloperExtrasEnabled, True)
         self.setCentralWidget(self.__webview)
 
         treeDockWindow = QDockWidget("Contents", self)
@@ -90,12 +93,61 @@ class MainWindow(QMainWindow):
         p = lua.parser.Parser(filename)
         p.parse()
 
+        self.__game.setCartridge(p.cartridge)
         for zone in p.zones:
             self.__game.addZone(zone)
         for media in p.media:
             self.__game.addMedia(media)
         for fcn in p.functions:
             self.__game.addFunction(fcn)
+
+        self.__html = html = '''<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="initial-scale=1.0, user-scalable=no">
+    <meta charset="utf-8">
+    <title>WIG Zone Viewer</title>
+    <style>
+      html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      #map {
+        height: 100%;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script>
+
+      function initMap() {
+        var bounds = new google.maps.LatLngBounds();
+        var map = new google.maps.Map(document.getElementById('map'), {
+          zoom: 10,
+          center: WIGSTART,
+          mapTypeId: google.maps.MapTypeId.TERRAIN
+        });
+
+        ZONEDATA
+        map.fitBounds(bounds);
+        map.panToBounds(bounds);
+      }
+    </script>
+    <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=  &callback=initMap">
+    </script>
+  </body>
+</html>
+'''
+        zoneCode = ''
+        for zone in self.__game.zones:
+            zoneCode += zone.getJavaScript()
+        wigStart = self.__game.getStartJavaScript()
+        self.__html = self.__html.replace('ZONEDATA', zoneCode)
+        self.__html = self.__html.replace('WIGSTART', wigStart)
+        self.__webview.setHtml(self.__html)
 
     def addRecentFile(self, fname):
         if not fname:

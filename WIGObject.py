@@ -26,8 +26,6 @@ class WIGObject(QAbstractTableModel):
 
     def data(self, index, role=Qt.DisplayRole):
         if (role == Qt.DisplayRole):
-            print(index)
-            print(self.properties.keys())
             row = index.row()
             col = index.column()
             key = list(self.properties.keys())[row]

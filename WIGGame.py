@@ -19,6 +19,8 @@ class WIGGame(QStandardItemModel):
         self.__items = QStandardItem("Items")
         self.__media = QStandardItem("Media")
         self.__zones = QStandardItem("Zones")
+        self.zones = []
+        self.cartridge = None
 
         self.__rootNode.appendRow(self.__cartridge)
         self.__rootNode.appendRow(self.__items)
@@ -27,15 +29,14 @@ class WIGGame(QStandardItemModel):
         self.__rootNode.appendRow(self.__functions)
         self.__rootNode.appendRow(self.__objects)
 
-        self.__info = {}
+        self.info = {}
 
     def updateInformation(self, index):
         item = self.itemFromIndex(index)
         parent = item.parent()
         if parent:
             path = parent.text() + item.text()
-            self.selectedItemChanged.emit(self.__info[path])
-
+            self.selectedItemChanged.emit(self.info[path])
 
     def columnCount(self, QModelIndex_parent=None, *args, **kwargs):
         return 1
@@ -45,20 +46,28 @@ class WIGGame(QStandardItemModel):
             return 'Name'
         return None
 
+    def setCartridge(self, cartridge):
+        self.cartridge = WIGObject(cartridge)
+
     def addZone(self, zone):
         z = WIGZone(zone)
         zoneitem = QStandardItem(z.name)
         zoneitem.setCheckable(True)
         zoneitem.setCheckState(Qt.Checked)
         self.__zones.appendRow(zoneitem)
-        self.__info[self.__zones.text() + z.name] = z
+        self.info[self.__zones.text() + z.name] = z
+        self.zones.append(WIGZone(zone))
 
     def addMedia(self, media):
         pass
         m = WIGObject(media)
         mediaitem = QStandardItem(m.name)
         self.__media.appendRow(mediaitem)
-        self.__info[self.__media.text() + m.name] = m
+        self.info[self.__media.text() + m.name] = m
 
     def addFunction(self, function):
         pass
+
+    def getStartJavaScript(self):
+        point = self.cartridge.get('StartingLocation')
+        return '{lat: %f, lng: %f}' % (point.lat, point.lon)
