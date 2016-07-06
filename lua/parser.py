@@ -19,7 +19,7 @@ class Parser(object):
         reCartridge = re.compile('(\w+) = Wherigo.ZCartridge')
         reZone = re.compile('(\w+) = Wherigo.Zone\((\w+)\)')
         reAssignment = re.compile('([\w\.\:]+) = (\S+.*)$')
-        reProperty = re.compile('(\w+).(\w+)')
+        reProperty = re.compile('(\w+)\.(\w+)')
 
         nametable = {}
 
@@ -31,7 +31,12 @@ class Parser(object):
             matchAssignment = reAssignment.match(line)
             matchFunction = reFunction.match(line)
 
-            currentItem.append(line)
+            if '_AcK("' in line:
+                pass
+            dline = UrwigoDecryptor.decrypt(line)
+            if '_AcK("' in line:
+                pass
+            currentItem.append(dline)
 
             assigmentDone = False
 
@@ -52,7 +57,9 @@ class Parser(object):
                     UrwigoDecryptor.setDecryptFcnName(fcnname)
                 if line == 'end':
                     inFunction = False
-                    self.functions.append(LuaFunction(currentItem))
+                    if 'nput' in currentItem[0]:
+                        pass
+                    self.functions.append(LuaFunction(currentItem.copy()))
 
 
             if matchMedia:
@@ -85,16 +92,15 @@ class Parser(object):
                         value = currentItem[:]
                         assigmentDone = True
                 if assigmentDone:
-                    o = objec
-                    matchProperty = reProperty.match(o)
+                    matchProperty = reProperty.match(objec)
                     if matchProperty:
                         (obj, property) = matchProperty.groups()
                         if obj in nametable.keys():
                             nametable[obj].set(property, value)
                         else:
-                            obj = LuaObject(o)
-                            self.objects.append(obj)
-                            nametable[o] = obj
+                            o = LuaObject(obj)
+                            self.objects.append(o)
+                            nametable[obj] = o
 
 
         fcns = self.functions.copy()

@@ -26,18 +26,24 @@ def getDecryptFcnName():
     global decryptname
     return decryptname
 
-def decrypt(str):
+def decrypt(es):
     global dtable
-    matchDecrypt = re.match(decryptname + '\((.+)\)', str)
+    global decryptname
+    if not decryptname:
+        return es
+    matchDecrypt = re.match('.*' + decryptname + '\("(.+)"\).*', es)
     if decryptname and matchDecrypt:
-        #print("Encrypted fcncall '%s'" % (str))
-        encryptedStr = matchDecrypt.group(1)
+
+        #print("Encrypted fcncall '%s'" % (es))
+        encryptedStr = '"' + matchDecrypt.group(1) + '"'
+        e = encryptedStr
         #print("Encrypted string '%s'" % (encryptedStr))
         #print("Encrypted string '%s'" % (luaToPython(encryptedStr)))
         encryptedStr = encryptedStr.replace('\\127', chr(127))
         encryptedStr = encryptedStr.replace('\\195\\165', 'å')
         encryptedStr = encryptedStr.replace('\\195\\164', 'ä')
         encryptedStr = encryptedStr.replace('\\195\\182', 'ö')
+        encryptedStr = encryptedStr.replace('\\194\\176', '°')
         s = luaToPython(encryptedStr)
         res = ''
         for i in range(len(s)):
@@ -47,7 +53,15 @@ def decrypt(str):
             else:
                 res = res + chr(b)
         #print("Decrypted string '%s'" % (res))
-        return res
+        #print(es)
+        es = es.replace(e, res)
+        es = es.replace(decryptname, '')
+        es = es.replace('('+res+')', '"' + res + '"')
+        if 'N 58' in es:
+            pass
+        #print("-->", es)
+        #return res
+        return es
     else:
-        return str
+        return es
 

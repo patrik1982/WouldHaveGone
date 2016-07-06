@@ -8,8 +8,48 @@ import qrc_resources
 import lua.parser
 
 import WIGGame
+import WIGFunction
+import WIGMedia
 
 __version__ = "1.0.0"
+
+class WIGMediaViewer(QWidget):
+    def __init__(self, *args):
+        super(QWidget, self).__init__(*args)
+
+        self.__textWidget = QLabel("<i>No media</i>")
+        self.__textWidget.setAlignment(Qt.AlignCenter)
+
+        self.__sourceWidget = QPlainTextEdit("No source")
+        self.__sourceWidget.hide()
+
+        self.__imageWidget = QLabel("<i>No image</i>")
+        self.__imageWidget.setAlignment(Qt.AlignCenter)
+        self.__imageWidget.hide()
+
+        self.__layout = QHBoxLayout()
+        self.__layout.addWidget(self.__textWidget)
+        self.__layout.addWidget(self.__sourceWidget)
+        self.__layout.addWidget(self.__imageWidget)
+        self.setLayout(self.__layout)
+
+    def loadMedia(self, media):
+        self.__textWidget.hide()
+        self.__sourceWidget.hide()
+        self.__imageWidget.hide()
+        if isinstance(media, WIGFunction.WIGFunction):
+            self.__sourceWidget.show()
+            self.__sourceWidget.clear()
+            self.__sourceWidget.insertPlainText(media.getSource())
+            self.__sourceWidget.setReadOnly(True)
+        elif isinstance(media, WIGMedia.WIGMedia):
+            if media.getType() in ['jpg', 'png']:
+                self.__imageWidget.setText("Would load image %s" % media.getFilename())
+            else:
+                self.__imageWidget.setText("Would load media %s (%s)" % (media.name, type(media)))
+            self.__imageWidget.show()
+        else:
+            self.__textWidget.show()
 
 class MainWindow(QMainWindow):
     def __init__(self, parent=None):
@@ -22,7 +62,6 @@ class MainWindow(QMainWindow):
 
         self.__webview = QWebView()
         self.__webview.setMinimumSize(200, 200)
-        #self.__webview.setUrl(QUrl("https://www.openstreetmap.org/"))
         QWebSettings.globalSettings().setAttribute(QWebSettings.DeveloperExtrasEnabled, True)
         self.setCentralWidget(self.__webview)
 
@@ -32,6 +71,9 @@ class MainWindow(QMainWindow):
         self.__treeWidget = QTreeView()
         self.__treeWidget.setHeaderHidden(True)
         self.__treeWidget.setModel(self.__game)
+        self.__treeWidget.setAnimated(True)
+        self.__treeWidget.setSelectionMode(QAbstractItemView.SingleSelection)
+
         treeDockWindow.setWidget(self.__treeWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, treeDockWindow)
 
@@ -41,9 +83,17 @@ class MainWindow(QMainWindow):
         self.__infoWidget = QTreeView()
         infoDockWindow.setWidget(self.__infoWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, infoDockWindow)
-        self.__treeWidget.clicked.connect(self.__game.updateInformation)
 
+        mediaDockWindow = QDockWidget("Media Viewer", self)
+        mediaDockWindow.setObjectName("MediaDockWidget")
+        mediaDockWindow.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
+        self.__mediaWidget = WIGMediaViewer()
+        mediaDockWindow.setWidget(self.__mediaWidget)
+        self.addDockWidget(Qt.RightDockWidgetArea, mediaDockWindow)
+
+        self.__treeWidget.selectionModel().selectionChanged.connect(self.__game.updateInformation)
         self.__game.selectedItemChanged.connect(self.__infoWidget.setModel)
+        self.__game.selectedItemChanged.connect(self.__mediaWidget.loadMedia)
 
         self.__printer = None
 
@@ -152,7 +202,7 @@ class MainWindow(QMainWindow):
         wigStart = self.__game.getStartJavaScript()
         self.__html = self.__html.replace('ZONEDATA', zoneCode)
         self.__html = self.__html.replace('WIGSTART', wigStart)
-        self.__webview.setHtml(self.__html)
+        #self.__webview.setHtml(self.__html)
 
     def addRecentFile(self, fname):
         if not fname:

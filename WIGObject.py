@@ -5,14 +5,18 @@ class WIGObject(QAbstractTableModel):
         QAbstractTableModel.__init__(self, parent)
         self.name = obj.name
         self.properties = obj.properties
+        self.methods = []
+        #for method in obj.methods:
+            #print(method)
+            #self.methods.append(WIGFunction.WIGFunction(method))
 
     def set(self, property, value):
         print(property, value)
         self.properties[property] = value
         print(self.properties)
 
-    def get(self, object):
-        return self.properties[object]
+    def get(self, obj):
+        return self.properties[obj]
 
     def getProps(self):
         return self.properties.keys()
