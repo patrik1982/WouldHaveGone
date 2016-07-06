@@ -75,14 +75,15 @@ class LuaObject(object):
                 retval += '\n'
         return retval
 
-class LuaFunction(object):
+class LuaFunction(LuaObject):
     ctr = 0
     def __init__(self, lines=[]):
         if lines:
             match = re.match("function ([\w\.\:]+)", lines[0])
             self.name = match.group(1) if match else None
         else:
-            self.__name = 'unknown%d' % ctr
+            self.name = 'unknown%d' % ctr
+        super(LuaFunction, self).__init__(name = self.name)
         self.lines = lines
         LuaFunction.ctr += 1
 

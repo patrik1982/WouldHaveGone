@@ -4,6 +4,7 @@ from PyQt5.Qt import *
 
 from WIGZone import WIGZone
 from WIGObject import WIGObject
+from WIGFunction import WIGFunction
 
 class WIGGame(QStandardItemModel):
     selectedItemChanged = pyqtSignal(QAbstractTableModel)
@@ -59,14 +60,28 @@ class WIGGame(QStandardItemModel):
         self.zones.append(WIGZone(zone))
 
     def addMedia(self, media):
-        pass
         m = WIGObject(media)
         mediaitem = QStandardItem(m.name)
         self.__media.appendRow(mediaitem)
         self.info[self.__media.text() + m.name] = m
 
     def addFunction(self, function):
-        pass
+        f = WIGFunction(function)
+        functionitem = QStandardItem(f.name)
+        self.__functions.appendRow(functionitem)
+        self.info[self.__functions.text() + f.name] = f
+
+    def addItem(self, item):
+        i = WIGObject(item)
+        itemitem = QStandardItem(i.name)
+        self.__item.appendRow(itemitem)
+        self.info[self.__item.text() + i.name] = i
+
+    def addObject(self, obj):
+        o = WIGObject(obj)
+        objectitem = QStandardItem(o.name)
+        self.__objects.appendRow(objectitem)
+        self.info[self.__objects.text() + o.name] = o
 
     def getStartJavaScript(self):
         point = self.cartridge.get('StartingLocation')

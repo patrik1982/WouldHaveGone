@@ -30,6 +30,7 @@ class MainWindow(QMainWindow):
         treeDockWindow.setObjectName("ContentsDockWidget")
         treeDockWindow.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.__treeWidget = QTreeView()
+        self.__treeWidget.setHeaderHidden(True)
         self.__treeWidget.setModel(self.__game)
         treeDockWindow.setWidget(self.__treeWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, treeDockWindow)
@@ -94,12 +95,16 @@ class MainWindow(QMainWindow):
         p.parse()
 
         self.__game.setCartridge(p.cartridge)
+        for item in p.items:
+            self.__game.addItem(item)
         for zone in p.zones:
             self.__game.addZone(zone)
         for media in p.media:
             self.__game.addMedia(media)
         for fcn in p.functions:
             self.__game.addFunction(fcn)
+        for obj in p.objects:
+            self.__game.addObject(obj)
 
         self.__html = html = '''<!DOCTYPE html>
 <html>
@@ -136,7 +141,7 @@ class MainWindow(QMainWindow):
       }
     </script>
     <script async defer
-    src="https://maps.googleapis.com/maps/api/js?key=  &callback=initMap">
+    src="https://maps.googleapis.com/maps/api/js?key= AIzaSyAhldaQF3P1bKXLJgy__xdUFhcxU1OXE8k &callback=initMap">
     </script>
   </body>
 </html>

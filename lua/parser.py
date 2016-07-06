@@ -70,7 +70,7 @@ class Parser(object):
             else:
                 # Handle assignments. Use counter for block level. Assumes braces are on otherwise empty lines
                 if inAssignment == 0 and matchAssignment:
-                    (object, value) = matchAssignment.groups()
+                    (objec, value) = matchAssignment.groups()
                     if value == '{':
                         currentItem = [value]
                         inAssignment = 1
@@ -85,16 +85,16 @@ class Parser(object):
                         value = currentItem[:]
                         assigmentDone = True
                 if assigmentDone:
-                    o = object
+                    o = objec
                     matchProperty = reProperty.match(o)
                     if matchProperty:
-                        (object, property) = matchProperty.groups()
-                        if object in nametable.keys():
-                            nametable[object].set(property, value)
+                        (obj, property) = matchProperty.groups()
+                        if obj in nametable.keys():
+                            nametable[obj].set(property, value)
                         else:
-                            obj = LuaObject(object)
+                            obj = LuaObject(o)
                             self.objects.append(obj)
-                            nametable[object] = obj
+                            nametable[o] = obj
 
 
         fcns = self.functions.copy()
