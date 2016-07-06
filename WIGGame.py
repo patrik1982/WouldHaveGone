@@ -22,6 +22,7 @@ class WIGGame(QStandardItemModel):
         self.__media = QStandardItem("Media")
         self.__zones = QStandardItem("Zones")
         self.zones = []
+        #self.mediadata = {}
         self.cartridge = None
 
         self.__rootNode.appendRow(self.__cartridge)
@@ -61,10 +62,11 @@ class WIGGame(QStandardItemModel):
         self.info[self.__zones.text() + z.name] = z
         self.zones.append(WIGZone(zone))
 
-    def addMedia(self, media):
-        m = WIGMedia(media)
+    def addMedia(self, media, data):
+        m = WIGMedia(media, data)
         mediaitem = QStandardItem(m.name)
         self.__media.appendRow(mediaitem)
+        #self.mediadata[m.name] = data
         self.info[self.__media.text() + m.name] = m
 
     def addFunction(self, function):

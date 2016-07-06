@@ -5,6 +5,8 @@ import sys
 from PyQt5.Qt import *
 import qrc_resources
 
+import gwc.gwcd
+
 import lua.parser
 
 import WIGGame
@@ -23,20 +25,28 @@ class WIGMediaViewer(QWidget):
         self.__sourceWidget = QPlainTextEdit("No source")
         self.__sourceWidget.hide()
 
-        self.__imageWidget = QLabel("<i>No image</i>")
+        self.__imageWidget = QLabel()
         self.__imageWidget.setAlignment(Qt.AlignCenter)
         self.__imageWidget.hide()
+        self.__imageLabel = QLabel()
+        self.__imageLabel.setAlignment(Qt.AlignCenter)
+        self.__imageLabel.hide()
+        self.__imageLayout = QVBoxLayout()
+        self.__imageLayout.addWidget(self.__imageWidget)
+        self.__imageLayout.addWidget(self.__imageLabel)
 
         self.__layout = QHBoxLayout()
         self.__layout.addWidget(self.__textWidget)
         self.__layout.addWidget(self.__sourceWidget)
-        self.__layout.addWidget(self.__imageWidget)
+        self.__layout.addLayout(self.__imageLayout)
+        #self.__layout.addWidget(self.__imageWidget)
         self.setLayout(self.__layout)
 
     def loadMedia(self, media):
         self.__textWidget.hide()
         self.__sourceWidget.hide()
         self.__imageWidget.hide()
+        self.__imageLabel.hide()
         if isinstance(media, WIGFunction.WIGFunction):
             self.__sourceWidget.show()
             self.__sourceWidget.clear()
@@ -44,9 +54,13 @@ class WIGMediaViewer(QWidget):
             self.__sourceWidget.setReadOnly(True)
         elif isinstance(media, WIGMedia.WIGMedia):
             if media.getType() in ['jpg', 'png']:
-                self.__imageWidget.setText("Would load image %s" % media.getFilename())
+                #self.__imageWidget.setText("Would load image %s" % media.getFilename())
+                img = QImage.fromData(media.data)
+                self.__imageWidget.setPixmap(QPixmap.fromImage(img))
+                self.__imageLabel.setText("%s (%d x %d pixels)" % (media.getType().upper(), img.width(), img.height()))
+                self.__imageLabel.show()
             else:
-                self.__imageWidget.setText("Would load media %s (%s)" % (media.name, type(media)))
+                self.__textWidget.setText("Would load media %s (%s)" % (media.name, type(media)))
             self.__imageWidget.show()
         else:
             self.__textWidget.show()
@@ -133,14 +147,25 @@ class MainWindow(QMainWindow):
         self.updateFileMenu()
         QTimer.singleShot(0, self.loadInitialFile)
 
-    def fileNew(self):
-        pass
     def fileOpen(self):
-        pass
+        if not self.okToContinue():
+            return
+        dir = os.path.dirname(self.__filename) if self.__filename is not None else "."
+        fname = QFileDialog.getOpenFileName(self,
+                                "WouldHaveGone - Choose cartridge",
+                                dir,
+                                "Cartridge files (*.gwc)")[0]
+        if fname:
+            self.loadFile(fname)
+
     def filePrint(self):
         pass
 
     def loadFile(self, filename):
+        print(filename)
+        files = gwc.gwcd.decompile(filename)
+        #return
+        filename = "script.txt"
         p = lua.parser.Parser(filename)
         p.parse()
 
@@ -149,8 +174,8 @@ class MainWindow(QMainWindow):
             self.__game.addItem(item)
         for zone in p.zones:
             self.__game.addZone(zone)
-        for media in p.media:
-            self.__game.addMedia(media)
+        for (media, data) in zip(p.media, files['media']):
+            self.__game.addMedia(media, data)
         for fcn in p.functions:
             self.__game.addFunction(fcn)
         for obj in p.objects:
@@ -248,7 +273,8 @@ class MainWindow(QMainWindow):
     def loadInitialFile(self):
         settings = QSettings()
         filename = settings.value("LastFile", type=str)
-        filename = "script.txt"
+        #filename = "script.txt"
+        filename = 'C:/Users/Patrik Jakobsson/PycharmProjects/WouldHaveGone/marmorbruket_-_iho.gwc'
         if filename and QFile.exists(filename):
             self.loadFile(filename)
 
