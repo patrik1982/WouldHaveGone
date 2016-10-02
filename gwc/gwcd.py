@@ -112,14 +112,14 @@ class GWCDecompiler:
         # Go to the correct position
         self.reader.seek(self.cartridge_data['objects'][0][1])
         lua_length = self.reader.read('int')
-        return self.reader.read_raw(lua_length)
+        data = self.reader.read_raw(lua_length)
         # Read and write the lua bytecode
-        lua_length = self.reader.read('int')
-        filepath = os.path.join(self.output, filename)
-        with open(filepath, 'wb') as f:
-            f.write(self.reader.read_raw(lua_length))
+        #lua_length = self.reader.read('int')
+        #filepath = os.path.join(self.output, filename)
+        with open(filename, 'wb') as f:
+            f.write(data)
 
-        return filename
+        return data
 
 
     def get_media_files(self):
