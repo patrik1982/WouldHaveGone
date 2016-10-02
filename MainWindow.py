@@ -2,6 +2,8 @@ import os
 import platform
 import sys
 
+import subprocess
+
 from PyQt5.Qt import *
 import qrc_resources
 
@@ -15,6 +17,19 @@ import WIGMedia
 
 __version__ = "1.0.0"
 
+def jarWrapper(*args):
+    process = subprocess.Popen(['java', '-jar']+list(args), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    ret = []
+    while process.poll() is None:
+        line = process.stdout.readline()
+        if line != '' and line.endswith(b'\n'):
+            ret.append(line[:-1])
+    stdout, stderr = process.communicate()
+    ret += stdout.split(b'\n')
+    if stderr != '':
+        ret += stderr.split(b'\n')
+    ret.remove(b'')
+    return ret
 class WIGMediaViewer(QWidget):
     def __init__(self, *args):
         super(QWidget, self).__init__(*args)
@@ -39,7 +54,6 @@ class WIGMediaViewer(QWidget):
         self.__layout.addWidget(self.__textWidget)
         self.__layout.addWidget(self.__sourceWidget)
         self.__layout.addLayout(self.__imageLayout)
-        #self.__layout.addWidget(self.__imageWidget)
         self.setLayout(self.__layout)
 
     def loadMedia(self, media):
@@ -53,15 +67,15 @@ class WIGMediaViewer(QWidget):
             self.__sourceWidget.insertPlainText(media.getSource())
             self.__sourceWidget.setReadOnly(True)
         elif isinstance(media, WIGMedia.WIGMedia):
-            if media.getType() in ['jpg', 'png']:
-                #self.__imageWidget.setText("Would load image %s" % media.getFilename())
+            if media.getType() in ['jpg', 'png', 'bmp', 'gif']:
                 img = QImage.fromData(media.data)
                 self.__imageWidget.setPixmap(QPixmap.fromImage(img))
                 self.__imageLabel.setText("%s (%d x %d pixels)" % (media.getType().upper(), img.width(), img.height()))
                 self.__imageLabel.show()
+                self.__imageWidget.show()
             else:
                 self.__textWidget.setText("Would load media %s (%s)" % (media.name, type(media)))
-            self.__imageWidget.show()
+                self.__textWidget.show()
         else:
             self.__textWidget.show()
 
@@ -70,7 +84,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__(parent)
 
         self.__filename = None
-        self.__game = WIGGame.WIGGame()
+        self.__game = None
 
         self.__html = None
 
@@ -84,7 +98,6 @@ class MainWindow(QMainWindow):
         treeDockWindow.setAllowedAreas(Qt.LeftDockWidgetArea | Qt.RightDockWidgetArea)
         self.__treeWidget = QTreeView()
         self.__treeWidget.setHeaderHidden(True)
-        self.__treeWidget.setModel(self.__game)
         self.__treeWidget.setAnimated(True)
         self.__treeWidget.setSelectionMode(QAbstractItemView.SingleSelection)
 
@@ -104,10 +117,6 @@ class MainWindow(QMainWindow):
         self.__mediaWidget = WIGMediaViewer()
         mediaDockWindow.setWidget(self.__mediaWidget)
         self.addDockWidget(Qt.RightDockWidgetArea, mediaDockWindow)
-
-        self.__treeWidget.selectionModel().selectionChanged.connect(self.__game.updateInformation)
-        self.__game.selectedItemChanged.connect(self.__infoWidget.setModel)
-        self.__game.selectedItemChanged.connect(self.__mediaWidget.loadMedia)
 
         self.__printer = None
 
@@ -162,12 +171,21 @@ class MainWindow(QMainWindow):
         pass
 
     def loadFile(self, filename):
-        print(filename)
         files = gwc.gwcd.decompile(filename)
-        #return
-        filename = "script.txt"
+        lualines = jarWrapper('unluac_2015_06_13.jar', 'cartridge.luac')
+        filename = 'cartridge.lua'
+        ofile = open(filename, 'wb')
+        for line in lualines:
+            ofile.write(line)
+        ofile.close()
         p = lua.parser.Parser(filename)
         p.parse()
+
+        self.__game = WIGGame.WIGGame()
+        self.__treeWidget.setModel(self.__game)
+        self.__treeWidget.selectionModel().selectionChanged.connect(self.__game.updateInformation)
+        self.__game.selectedItemChanged.connect(self.__infoWidget.setModel)
+        self.__game.selectedItemChanged.connect(self.__mediaWidget.loadMedia)
 
         self.__game.setCartridge(p.cartridge)
         for item in p.items:
@@ -227,7 +245,7 @@ class MainWindow(QMainWindow):
         wigStart = self.__game.getStartJavaScript()
         self.__html = self.__html.replace('ZONEDATA', zoneCode)
         self.__html = self.__html.replace('WIGSTART', wigStart)
-        #self.__webview.setHtml(self.__html)
+        self.__webview.setHtml(self.__html)
 
     def addRecentFile(self, fname):
         if not fname:
@@ -273,8 +291,6 @@ class MainWindow(QMainWindow):
     def loadInitialFile(self):
         settings = QSettings()
         filename = settings.value("LastFile", type=str)
-        #filename = "script.txt"
-        filename = 'C:/Users/Patrik Jakobsson/PycharmProjects/WouldHaveGone/marmorbruket_-_iho.gwc'
         if filename and QFile.exists(filename):
             self.loadFile(filename)
 

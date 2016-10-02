@@ -96,4 +96,8 @@ class WIGGame(QStandardItemModel):
 
     def getStartJavaScript(self):
         point = self.cartridge.get('StartingLocation')
-        return '{lat: %f, lng: %f}' % (point.lat, point.lon)
+        try:
+            return '{lat: %f, lng: %f}' % (point.lat, point.lon)
+        except Exception:
+            return '{lat: %f, lng: %f}' % (58.0, 14.0)
+
